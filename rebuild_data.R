@@ -1,0 +1,1 @@
+# Create a more useable subset of the original tab-delimited Arab Barometer file
