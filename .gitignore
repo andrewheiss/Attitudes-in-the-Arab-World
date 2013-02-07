@@ -1,2 +1,6 @@
 .DS_Store
 ICPSR_26581/
+.Rproj.user
+.RData
+.Rhistory
+*.Rproj
