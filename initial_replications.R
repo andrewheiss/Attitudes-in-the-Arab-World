@@ -7,14 +7,14 @@
 # Table 1
 # Personal Religiosity and Support for Democracy
 #-------------------------------------------------
-all.countries.table <- xtabs(~dem.best+q712, data=barometer)
+all.countries.table <- xtabs(~ dem.best + quran, data=barometer)
 round(prop.table(all.countries.table, 2), 2)
 
-individual.countries.table <- xtabs(~dem.best+q712+country.name, data=barometer)
+individual.countries.table <- xtabs(~ dem.best + quran + country.name, data=barometer)
 round(prop.table(individual.countries.table, c(3,2)), 2)
 
 # Alternative
-ftable(round(prop.table(xtabs(~country.name+dem.best+q712, data=barometer), c(3,1)), 2))
+ftable(round(prop.table(xtabs(~ country.name + dem.best + quran, data=barometer), c(3,1)), 2))
 
 
 #-----------------------------------------------------------
@@ -22,6 +22,17 @@ ftable(round(prop.table(xtabs(~country.name+dem.best+q712, data=barometer), c(3,
 # Binary Logistic Regression Models Estimating Support for
 # Secularism among Respondents Who Support Democracy
 #-----------------------------------------------------------
+# Data = limited to dem.best?
+
+# Dependent variable
+# 0 = Favors Islamic democracy; 1 = Favors secular democracy
+# Footnote 13 explains why q4013 is the best measure
+model <- glm(sec.dem ~ I(-quran) + I(-prime.minister) + 
+               I(-citizen.influence) + I(-maintain.order) + 
+               education + age + family.econ, 
+             data=barometer, subset=(dem.best==1 & country==1), 
+             family=binomial(link="logit")) 
+summary(model)
 
 
 
@@ -33,14 +44,3 @@ ftable(round(prop.table(xtabs(~country.name+dem.best+q712, data=barometer), c(3,
 #---------------------------------------------------
 
 
-
-
-# Question 2324: Democracy better than any other form of government
-# Question 2511: Citizens have power to influence government
-# Question 2513: People are free to criticize government without fear
-# Question 2514: People can join political organizations without fear
-# Question 214:  Present political situation in country
-# Question 2451: Democratic political system
-# Question 2452: Strong non-democratic leader
-
-# Q712: How often do you read the Quran?
