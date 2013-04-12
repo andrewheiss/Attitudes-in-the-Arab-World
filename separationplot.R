@@ -29,5 +29,5 @@ separation.plot <- function(predicted.values, actual.values, line=FALSE) {
   }
   
   # Restore par settings
-  par <- oldpar
+  par(oldpar)
 }
