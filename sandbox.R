@@ -9,10 +9,10 @@ library(ROCR)
 library(Hmisc)
 library(ggplot2)
 library(plyr)
-library(reshape)
+library(reshape2)
 library(xtable)
 library(MIfuns)
-source('separationplot.R')
+source('../separationplot.R')
 
 set.seed(1234)
 
@@ -66,53 +66,55 @@ abline(0, 1, col="grey", lty=3, lwd=3)
 text(1, .1, paste("AUC =", round(auc, 3)), pos=2)
 
 
-# Individual countries
-run.country.models <- function(x) {
-  model <- glm(sec.dem ~ I(-quran) + I(-prime.minister) + 
-                 I(-citizen.influence) + I(-maintain.order) + 
-                 education + age + family.econ, 
-               data=barometer, subset=(dem.best==1 & country.name==x), 
-               family=binomial(link="logit")) 
-}
 
-country.models <- sapply(levels(barometer$country.name), FUN=run.country.models)
-
-# View everything
-all.models <- cbind("All Countries"=coefficients(all.countries), as.data.frame(country.models[1,]))
-all.models
-xtable(all.models)
-
-summary(country.models[1,1])
-summary(all.countries)
+#-----------------------------------------------------------------
+# Save ggplot plots with Cairo device and transparent background
+#-----------------------------------------------------------------
+ggsave(filename, p, cairo_pdf, height=4.5, width=7, bg="transparent")  # logit graphs
+ggsave(filename, p, cairo_pdf, height=5.5, width=7, bg="transparent")  # ologit graphs
 
 
-#---------------------------------------------------
-# Table 3
-# Binary Logistic Regression Models Estimating 
-# Opposition to a Strong Undemocratic Leader among 
-# Respondents Who Support Democracy
-#---------------------------------------------------
 
-# Do this once Table 2 is accurate
+#-------------------------
+# Multinomial regression
+#-------------------------
+# Set up
+library(car)
+library(ggplot2)
+library(reshape)
+library(plyr)
+library(nnet)
 
-all.countries <- glm(autocracy.bad ~ I(-quran) + I(-prime.minister) + 
-                       I(-citizen.influence) + I(-maintain.order) + 
-                       education + age + family.econ, 
-                     data=barometer, subset=(dem.best==1), 
-                     family=binomial(link="logit")) 
-summary(all.countries)
+set.seed(1234)
 
-# Individual countries
-run.country.models <- function(x) {
-  model <- glm(autocracy.bad ~ I(-quran) + I(-prime.minister) + 
-                 I(-citizen.influence) + I(-maintain.order) + 
-                 education + age + family.econ, 
-               data=barometer, subset=(dem.best==1 & country.name==x), 
-               family=binomial(link="logit")) 
-}
+model.mnl <- multinom(autocracy.bad.ordinal ~ quran + prime.minister + 
+                        citizen.influence + maintain.order.ordinal + 
+                        education + age + family.econ + association + trust, 
+                      data=barometer.original4, 
+                      subset=(dem.best==1), Hess=TRUE, model=TRUE)
+summary(model.mnl)
 
-country.models <- sapply(levels(barometer$country.name), FUN=run.country.models)
+sample.range <- c("Strongly agree", "Agree", "Disagree", "Strongly disagree")
+autocracy.levels <- c("Very good", "Good", "Bad", "Very bad")
 
-# View everything
-all.models <- cbind("All Countries"=coefficients(all.countries), as.data.frame(country.models[1,]))
-all.models
+X <- data.frame(my.mode(barometer$quran), my.mode(barometer$prime.minister), my.mode(barometer$citizen.influence), sample.range, 1, my.mode(barometer$age), my.mode(barometer$family.econ), 0, 0)
+
+# X <- cbind(my.mode(barometer$quran), my.mode(barometer$prime.minister), my.mode(barometer$citizen.influence), sample.range, 1, my.mode(barometer$age), my.mode(barometer$family.econ), 0, 0)
+
+
+colnames(X) <- names(model.mnl$model)[-1]
+
+single.mnl <- predict(model.mnl, newdata=X, type="probs")
+
+rownames(single.mnl) <- sample.range
+(plot.data <- melt(single.mnl))
+plot.data$X1 <- factor(plot.data$X1, levels=sample.range, ordered=TRUE)
+plot.data$X2 <- factor(plot.data$X2, levels=autocracy.levels, ordered=TRUE)
+
+mnl.spaghetti <- ggplot()
+mnl.spaghetti + geom_line(aes(x=X1, y=value, group=X2, colour=X2), data=plot.data, size=2) + 
+  scale_colour_brewer(palette="Set1") +
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size=2))) + 
+  ylim(0, 1) + 
+  labs(y="Probability of answering\n", x=x.plot.label, colour="Autocracy")
+

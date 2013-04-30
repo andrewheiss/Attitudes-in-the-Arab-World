@@ -45,6 +45,7 @@ barometer$association <- recode(barometer$q202, "1=1; 2=0")
 barometer$trust <- recode(barometer$q204, "1=1; 2=0")
 barometer$vote <- recode(barometer$q207, "1=1; 2=0")
 barometer$rally <- recode(barometer$q210, "1=1; 2=0")
+barometer$gradual.change <- barometer$q2252
 
 
 #------------------------
@@ -56,3 +57,18 @@ barometer.original4 <- barometer[(barometer$country==1 | barometer$country==2 | 
 # Add country names
 barometer$country.name <- (factor(barometer$country, levels=c(1, 2, 3, 4, 6, 7), labels=c("Jordan", "Palestine", "Algeria", "Morocco", "Lebanon", "Yemen")))
 barometer.original4$country.name <- (factor(barometer.original4$country, levels=c(1, 2, 3, 4), labels=c("Jordan", "Palestine", "Algeria", "Morocco")))
+
+
+#------------
+# Functions
+#------------
+# Calculate the mode
+my.mode <- function(x) {
+  which.max(table(x))
+}
+
+
+#----------------------------------------------------
+# Save everything so we don't have to do this again
+#----------------------------------------------------
+save(list=c("barometer", "barometer.original4", "barometer.raw", "my.mode"), file="Barometer.RData")
